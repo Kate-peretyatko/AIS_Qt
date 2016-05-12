@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <complex>
 #include <math.h>
+
+//#include "fasttransforms.cpp"
 using namespace std;
 
 int main(int argc, char *argv[])
@@ -42,13 +44,14 @@ int main(int argc, char *argv[])
         //cout << diff_com[k] << endl;
     }
 
-    complex <double> *twiddles = new complex <double> [18];
+    complex <float> *twiddles = new complex <float> [18];
     complex <float> one(0, 1);
     for(int t = 1; t < 18; t++)
     {
-        twiddles[t] = complex <double> (exp(one.imag()*(t-1)*M_PI/8));
-        cout << twiddles[t] << endl;
+         twiddles[t] = exp(one * float((t - 1) *(M_PI/8)));
+         cout << twiddles[t] << endl;
     }
+
     //double synchro[] = {twiddles[4], twiddles[3], twiddles[2], twiddles[1]};
     //cout << synchro[0] << " " << synchro[1] << " " << synchro[2] << " " << synchro[3] << " " << endl;
 

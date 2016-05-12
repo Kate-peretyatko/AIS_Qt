@@ -14,5 +14,8 @@ CONFIG   -= app_bundle
 
 TEMPLATE = app
 
+INCLUDEPATH += С:/diplom/cpp/src
 
 SOURCES += main.cpp
+
+HEADERS +=
