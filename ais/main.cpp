@@ -6,7 +6,6 @@
 #include <complex>
 #include <math.h>
 
-//#include "fasttransforms.cpp"
 using namespace std;
 
 int main(int argc, char *argv[])
@@ -49,11 +48,47 @@ int main(int argc, char *argv[])
     for(int t = 1; t < 18; t++)
     {
          twiddles[t] = exp(one * float((t - 1) *(M_PI/8)));
-         cout << twiddles[t] << endl;
+         //cout << twiddles[t] << endl;
     }
 
-    //double synchro[] = {twiddles[4], twiddles[3], twiddles[2], twiddles[1]};
-    //cout << synchro[0] << " " << synchro[1] << " " << synchro[2] << " " << synchro[3] << " " << endl;
+    /*complex <float> *down = new complex <float> [4];
+    int y = 4;
+    for(int p = 0; p < 4; p++)
+    {
+        down[p] = twiddles[y];
+        y--;
+        cout << down[p] << " ";
+    }
+
+    complex <float> *up = new complex <float> [4];
+    y = 2;
+    for(int p = 0; p < 4; p++)
+    {
+        up[p] = twiddles[y];
+        y++;
+        cout << up[p] << " ";
+    }*/
+
+    complex <float> synchro[] = {twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[6], twiddles[7], twiddles[8], twiddles[9], twiddles[10], twiddles[11], twiddles[12], twiddles[13],
+                                 twiddles[14], twiddles[15], twiddles[16], twiddles[17], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[6], twiddles[7], twiddles[8], twiddles[9], twiddles[8], twiddles[7], twiddles[6], twiddles[5]};
+    for(int u = 0; u < 128; u++)
+    {
+        cout << "u = " << u << " " << synchro[u]<< endl;
+    }
 
     QCoreApplication a(argc, argv);
 
