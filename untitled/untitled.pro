@@ -28,7 +28,8 @@ SOURCES += main.cpp \
     optimization.cpp \
     solvers.cpp \
     specialfunctions.cpp \
-    statistics.cpp
+    statistics.cpp \
+    fft.cpp
 
 HEADERS += \
     alglibinternal.h \
