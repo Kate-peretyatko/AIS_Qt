@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <complex>
 #include <math.h>
+#include <algorithm>
 #include "fasttransforms.h"
 
 
@@ -41,13 +42,27 @@ int main(int argc, char *argv[])
         com[l] = std::complex <float> (data[j], data[j+1]);
         l++;
     }
+    /*std::ofstream fout;
+    fout.open("signal.txt");
+    for(int i = 0; i < size_signal; i++)
+    {
+        fout << "i = " << i+1 << " : " << com[i] << std::endl;
+    }
+    fout.close();*/
     //***************** ПРИВЕДЕНИЕ К ДИФФ. ВИДУ *********************
     std::complex <float> *diff_com = new std::complex  <float> [size_signal];
     for(int k = 0; k < l ; k++)
     {
         diff_com[k] = com[k]*conj(com[k+1]);
-        //std::cout << diff_com[k] << std::endl; // СОВПАДАЕТ С MATLAB
+        //std::cout << "k = " << k << " : " << diff_com[k] << std::endl; // СОВПАДАЕТ С MATLAB
     }
+    /*std::ofstream fout;
+    fout.open("diff_signal.txt");
+    for(int i = 0; i < size_signal; i++)
+    {
+        fout << "i = " << i+1 << " : " << diff_com[i] << std::endl;
+    }
+    fout.close();*/
     //****************** ПОДГОТОВКА ПРЕАМБУЛЫ ***********************
     std::complex <float> *twiddles = new std::complex <float> [18];
     std::complex <float> one(0, 1);
@@ -99,54 +114,200 @@ int main(int argc, char *argv[])
     fftc1d(z);
     //printf("%s ",z.tostring(3).c_str()); // СОВПАДАЕТ С MATLAB
 
-    //******************* CONJ(FFT(SYNCHRO)) ************************
     pSynchro = z.getcontent();
-    for(int o = 0; o < 128; o++)
+    /*std::ofstream fout;
+    fout.open("fft_synchro.txt");
+    for(int i = 0; i < length_frame; i++)
+    {
+        fout << "i = " << i+1 << " : " << pSynchro[i].tostring(3).c_str() << std::endl;
+    }
+    fout.close();*/
+
+    //******************* CONJ(FFT(SYNCHRO)) ************************
+    for(int o = 0; o < length_frame; o++)
     {
         pSynchro[o] = alglib::conj(pSynchro[o]);
-        //printf("%s ", pContent[o].tostring(3).c_str()); // СОВПАДАЕТ С MATLAB
+       // printf("%s ", pSynchro[o].tostring(3).c_str()); // СОВПАДАЕТ С MATLAB
     }
+    /*std::ofstream fout;
+    fout.open("conj_fft_synchro.txt");
+    for(int i = 0; i < length_frame; i++)
+    {
+        fout << "i = " << i+1 << " : " << pSynchro[i].tostring(3).c_str() << std::endl;
+    }
+    fout.close();*/
 
     //******** IFFT(FFT(DIFF_COM).*CONJ(FFT(SYNCHRO)))***************
     alglib::complex_1d_array y;
     alglib::complex_1d_array e;
-    alglib::complex *pSignal = new alglib::complex[size_signal];
-    alglib::complex *pMult = new alglib::complex[size_signal];
+    alglib::complex *pSignal = new alglib::complex[length_frame];
+    alglib::complex *pMult = new alglib::complex[length_frame];
+    alglib::complex *p = new alglib::complex[length_frame];
     alglib::complex *pIFFT = new alglib::complex[size_signal];
+
+    //std::ofstream fout;
+    //fout.open("ifft.txt");
     int r = 0;
-    //for(int r = 0; r < size_signal; r+length_frame)
+    for(r = 0; r < size_signal-length_frame; r = r+length_frame)
     {
-        for(int u = r; u < r+length_frame; u++){
-        pSignal[u].x = diff_com[u].real();
-        pSignal[u].y = diff_com[u].imag();
+        for(int u = 0; u < length_frame; u++){
+        pSignal[u].x = com[u+r].real();
+        pSignal[u].y = com[u+r].imag();
         }
+
         //************ FFT(DIFF_COM) ********************************
         y.setcontent(length_frame, pSignal);
         fftc1d(y);
         pSignal = y.getcontent();
+        /*std::ofstream fout;
+        fout.open("fft_diff_signal.txt");
+        for(int i = 0; i < length_frame; i++)
+        {
+            fout << "i = " << i+1 << " : " << pSignal[i].tostring(3).c_str() << std::endl;
+        }
+        fout.close();*/
         //printf("%s ", y.tostring(3).c_str()); // СОВПАДАЕТ С MATLAB
         //********** FFT(DIFF_COM).*CONJ(FFT(SYNCHRO)) **************
-        for( int h = r; h <  r+length_frame; h++)
+        for( int h = 0; h <  length_frame; h++)
         {
             //pMult[h] = pSynchro[h]*pSignal[h];
             pMult[h].x = pSynchro[h].x*pSignal[h].x - pSynchro[h].y*pSignal[h].y;
             pMult[h].y = pSynchro[h].y*pSignal[h].x + pSynchro[h].x*pSignal[h].y;
             //printf("%i %s \n",h, pMult[h].tostring(3).c_str()); // СОВПАЛО С MATLAB ДО 128 ОТСЧЁТА
         }
+        /*std::ofstream fout;
+        fout.open("Mult.txt");
+        for(int i = 0; i < length_frame; i++)
+        {
+             fout << "i = " << i+1 << " : " << pMult[i].tostring(3).c_str() << std::endl;
+        }
+        fout.close();*/
         //*********** IFFT() ****************************************
         e.setcontent(length_frame, pMult);
         fftc1dinv(e);
-        pIFFT = e.getcontent();
-        for(int i = 0; i < 150; i++)
+        p = e.getcontent();
+
+        //*********** ЗАПИСЫВАЕМ В БОЛЬШОЙ ВЕКТОР *******************
+        int k = 0;
+        for(int i = r; i < r+length_frame; i++)
         {
-           // printf("%i %s \n", i, pIFFT[i].tostring(3).c_str());
+            pIFFT[i] = p[k];
+            //fout << "i = " << i+1 << " : " << pIFFT[i].tostring(3).c_str() << std::endl;
+            k++;
         }
-         alglib::complex_1d_array t = "[0,0,0,0]";
-         fftc1d(t);
-         printf("%s ", t.tostring(3).c_str());
+    }    
+    //fout.close();
+
+    //*********************** ПОИСК МАКСИМУМА В КАЖДОМ ФРЕЙМЕ *******
+    alglib::complex *max = new alglib::complex[32];
+    int index[32];
+    int u = 0;
+    for(int r = 0; r < size_signal-length_frame; r = r+length_frame)
+    {
+        index[u] = 0;
+        for(int i = r; i < r+length_frame; i++)
+        {
+            if(alglib::abscomplex(pIFFT[i]) > alglib::abscomplex(max[u]))
+            {
+                max[u] = pIFFT[i];
+                index[u] = i;
+            }
+        }
+        u++;
     }
 
+    //********************** НОРМИРОВАНИЕ ***************************
+    //******************** ПОИСК САМОГО МАКСИМАЛЬНОГО ЭЛЕМЕНТА ******
+    alglib::complex Max_corr = (0, 0);
+    int id = 0;
+    for(int i = 0; i < 16; i++)
+    {
+        std::cout << "max : " << max[i].tostring(3).c_str() << "   index = " << index[i]+1 << std::endl;
+        if(alglib::abscomplex(max[i]) > alglib::abscomplex(Max_corr))
+        {
+           Max_corr = max[i];
+        }
+    }
+    std::cout << "Max_corr : " << Max_corr.tostring(3).c_str() << std::endl;
 
+    alglib::complex *norm_max_corr = new alglib::complex[16];
+    for(int i = 0; i < 16; i++)
+    {
+        norm_max_corr[i] = max[i]/Max_corr;
+        std::cout << "norm_max_corr : " << norm_max_corr[i].tostring(3).c_str() << std::endl;
+    }
+    //************ ВЫДЕЛЕНИЕ ПАКЕТА *********************************
+    int number_index = 0;
+    alglib::complex m(0,0);
+    for(int i = 0; i < 16; i++)
+    {
+        if(alglib::abscomplex( norm_max_corr[i]) > alglib::abscomplex(m))
+        {
+           m =  norm_max_corr[i];
+           number_index = index[i];
+        }
+    }
+    std::cout << "m : " << m.tostring(3).c_str() << " " << number_index+1 << std::endl;
+
+    int length_data = 1024;
+    std::complex <float> *package = new std::complex  <float> [length_data];
+    for(int i = 0; i < length_data; i++)
+    {
+        package[i] = com[number_index+i];
+        //std::cout << package[i] << std::endl;
+    }
+
+    //********************** ДЕМОДУЛЯТОР ****************************
+    std::complex <float> *sig1 = new std::complex <float> [5];
+    std::complex <float> *sig2 = new std::complex <float> [5];
+    sig1[0] = 1;
+    sig1[1] = exp(one*float(M_PI/8));
+    sig1[2] = exp(one*float(M_PI/4));
+    sig1[3] = exp(one*float(3*M_PI/8));
+    sig1[4] = one;
+    for(int i = 0; i < 5; i++)
+    {
+        sig2[i] = std::conj(sig1[i]);
+        //std::cout << sig2[i] << std::endl;
+    }
+    std::complex <float> *x = new std::complex <float> [5];
+    int bits[length_data/4];
+    int ii = 0;
+    for(int i = 2; i < length_data; i = i + 4)
+    {
+        std::complex <float> pr1(0,0);
+        std::complex <float> pr2(0,0);
+
+        x[0] = package[i];
+        x[1] = package[i+1];
+        x[2] = package[i+2];
+        x[3] = package[i+3];
+        x[4] = package[i+4];
+        for(int step = 0; step < 5; step++)
+        {
+            pr1 = pr1 + x[step]*sig1[step];
+            pr2 = pr2 + x[step]*sig2[step];
+        }
+
+        //std::cout << "pr1 : " << pr1 << " pr2 : " << pr2 << std::endl;
+        if(pr1.real() > pr2.real())
+        {
+            bits[ii] = 0;
+        }
+        else
+        {
+            bits[ii] = 1;
+        }
+        ii++;
+    }
+    for( int i = 0; i < 32; i++)
+    {
+        if(bits[i] == bits[i+1])
+            bits[i] = 1;
+        else
+            bits[i] = 0;
+        std::cout << bits[i] << " ";
+    }
     QCoreApplication a(argc, argv);
     return a.exec();
 }
