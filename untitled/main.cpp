@@ -12,14 +12,13 @@
 
 int size_signal = 32770;
 int length_frame = 1024;
+int length_data = 1024;
 
-int main(int argc, char *argv[])
+void open_read_file(float data[])
 {
-    //*********** ОТКРЫТИЕ ФАЙЛА ************************************
     std::ifstream f;
     f.open("C:\\diplom\\my.txt");
 
-    float data[size_signal];
     if(f)
     {
         int i = 0;
@@ -34,37 +33,30 @@ int main(int argc, char *argv[])
     {
         std::cout << "Error openning file" << std::endl;
     }
-    //**************** СКЛЕИВАНИЕ В КОМПЛЕКСНЫЕ ЧИСЛА ***************
-    std::complex <float> *com = new std::complex  <float> [size_signal];
+}
+
+void complex_sig(float data[], std::complex <float> *com)
+{
     int l = 0;
-    for( int j = 0; j < 32770; j = j + 2)
+    for( int j = 0; j < size_signal; j = j + 2)
     {
         com[l] = std::complex <float> (data[j], data[j+1]);
         l++;
     }
-    /*std::ofstream fout;
-    fout.open("signal.txt");
-    for(int i = 0; i < size_signal; i++)
-    {
-        fout << "i = " << i+1 << " : " << com[i] << std::endl;
-    }
-    fout.close();*/
-    //***************** ПРИВЕДЕНИЕ К ДИФФ. ВИДУ *********************
-    std::complex <float> *diff_com = new std::complex  <float> [size_signal];
-    for(int k = 0; k < l ; k++)
+}
+
+void diff_complex_sig(std::complex <float> *com, std::complex <float> *diff_com)
+{
+
+    for(int k = 0; k < size_signal/2 ; k++)
     {
         diff_com[k] = com[k]*conj(com[k+1]);
         //std::cout << "k = " << k << " : " << diff_com[k] << std::endl; // СОВПАДАЕТ С MATLAB
     }
-    /*std::ofstream fout;
-    fout.open("diff_signal.txt");
-    for(int i = 0; i < size_signal; i++)
-    {
-        fout << "i = " << i+1 << " : " << diff_com[i] << std::endl;
-    }
-    fout.close();*/
-    //****************** ПОДГОТОВКА ПРЕАМБУЛЫ ***********************
-    std::complex <float> *twiddles = new std::complex <float> [18];
+}
+
+void twd(std::complex <float> *twiddles)
+{
     std::complex <float> one(0, 1);
     for(int t = 1; t < 18; t++)
     {
@@ -72,35 +64,18 @@ int main(int argc, char *argv[])
          //std::cout << twiddles[t] << std::endl; // СОВПАДАЕТ С MATLAB
     }
 
-    std::complex <float> synchro[] = {twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[6], twiddles[7], twiddles[8], twiddles[9], twiddles[10], twiddles[11], twiddles[12], twiddles[13],
-                                 twiddles[14], twiddles[15], twiddles[16], twiddles[17], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
-                                 twiddles[6], twiddles[7], twiddles[8], twiddles[9], twiddles[8], twiddles[7], twiddles[6], twiddles[5]};
 
-    for(int u = 0; u < 128; u++)
-    {
-        //std::cout << "u = " << u << " " << synchro[u]<< std::endl; // СОВПАДАЕТ С MATLAB
-    }
+}
 
-    //****************** БЫСТРАЯ КОРЕЕЛЯЦИЯ *************************
+void correlation(std::complex <float> synchro[], std::complex <float> *com,
+                 alglib::complex *pIFFT)
+{
     //ifft(fft(diff_com).*conj(fft(synchro)));
     //******************* РАЗБИВАЕМ НА ЭТАПЫ ************************
 
     //******************* FFT(SYNCHRO) ******************************
     alglib::complex_1d_array z;
-    alglib::complex *pSynchro = new alglib::complex[1024];
+    alglib::complex *pSynchro = new alglib::complex[length_frame];
     for(int u = 0; u < 128; u++){
         pSynchro[u].x = synchro[u].real();
         pSynchro[u].y = synchro[u].imag();
@@ -115,6 +90,7 @@ int main(int argc, char *argv[])
     //printf("%s ",z.tostring(3).c_str()); // СОВПАДАЕТ С MATLAB
 
     pSynchro = z.getcontent();
+
     /*std::ofstream fout;
     fout.open("fft_synchro.txt");
     for(int i = 0; i < length_frame; i++)
@@ -129,6 +105,7 @@ int main(int argc, char *argv[])
         pSynchro[o] = alglib::conj(pSynchro[o]);
        // printf("%s ", pSynchro[o].tostring(3).c_str()); // СОВПАДАЕТ С MATLAB
     }
+
     /*std::ofstream fout;
     fout.open("conj_fft_synchro.txt");
     for(int i = 0; i < length_frame; i++)
@@ -143,12 +120,11 @@ int main(int argc, char *argv[])
     alglib::complex *pSignal = new alglib::complex[length_frame];
     alglib::complex *pMult = new alglib::complex[length_frame];
     alglib::complex *p = new alglib::complex[length_frame];
-    alglib::complex *pIFFT = new alglib::complex[size_signal];
 
-    //std::ofstream fout;
-    //fout.open("ifft.txt");
+    std::ofstream fout;
+    fout.open("ifft.txt");
     int r = 0;
-    for(r = 0; r < size_signal-length_frame; r = r+length_frame)
+    for(r = 0; r < size_signal/2-1; r = r+length_frame)
     {
         for(int u = 0; u < length_frame; u++){
         pSignal[u].x = com[u+r].real();
@@ -159,6 +135,7 @@ int main(int argc, char *argv[])
         y.setcontent(length_frame, pSignal);
         fftc1d(y);
         pSignal = y.getcontent();
+
         /*std::ofstream fout;
         fout.open("fft_diff_signal.txt");
         for(int i = 0; i < length_frame; i++)
@@ -192,17 +169,17 @@ int main(int argc, char *argv[])
         for(int i = r; i < r+length_frame; i++)
         {
             pIFFT[i] = p[k];
-            //fout << "i = " << i+1 << " : " << pIFFT[i].tostring(3).c_str() << std::endl;
+            fout << "i = " << i+1 << " : " << pIFFT[i].tostring(3).c_str() << std::endl;
             k++;
         }
-    }    
-    //fout.close();
+    }
+    fout.close();
+}
 
-    //*********************** ПОИСК МАКСИМУМА В КАЖДОМ ФРЕЙМЕ *******
-    alglib::complex *max = new alglib::complex[32];
-    int index[32];
+void find_max(alglib::complex *pIFFT, alglib::complex *max, int index[])
+{
     int u = 0;
-    for(int r = 0; r < size_signal-length_frame; r = r+length_frame)
+    for(int r = 0; r < size_signal/2-1; r = r+length_frame)
     {
         index[u] = 0;
         for(int i = r; i < r+length_frame; i++)
@@ -215,9 +192,10 @@ int main(int argc, char *argv[])
         }
         u++;
     }
+}
 
-    //********************** НОРМИРОВАНИЕ ***************************
-    //******************** ПОИСК САМОГО МАКСИМАЛЬНОГО ЭЛЕМЕНТА ******
+void norm_max(alglib::complex *max, int index[], alglib::complex *norm_max_corr)
+{
     alglib::complex Max_corr = (0, 0);
     int id = 0;
     for(int i = 0; i < 16; i++)
@@ -230,13 +208,15 @@ int main(int argc, char *argv[])
     }
     std::cout << "Max_corr : " << Max_corr.tostring(3).c_str() << std::endl;
 
-    alglib::complex *norm_max_corr = new alglib::complex[16];
     for(int i = 0; i < 16; i++)
     {
         norm_max_corr[i] = max[i]/Max_corr;
         std::cout << "norm_max_corr : " << norm_max_corr[i].tostring(3).c_str() << std::endl;
     }
-    //************ ВЫДЕЛЕНИЕ ПАКЕТА *********************************
+}
+
+void pars_package(alglib::complex *norm_max_corr, int index[], std::complex <float> *com, std::complex <float> *package)
+{
     int number_index = 0;
     alglib::complex m(0,0);
     for(int i = 0; i < 16; i++)
@@ -249,15 +229,16 @@ int main(int argc, char *argv[])
     }
     std::cout << "m : " << m.tostring(3).c_str() << " " << number_index+1 << std::endl;
 
-    int length_data = 1024;
-    std::complex <float> *package = new std::complex  <float> [length_data];
     for(int i = 0; i < length_data; i++)
     {
         package[i] = com[number_index+i];
         //std::cout << package[i] << std::endl;
     }
+}
 
-    //********************** ДЕМОДУЛЯТОР ****************************
+void demodulation(std::complex <float> *package)
+{
+    std::complex <float> one(0, 1);
     std::complex <float> *sig1 = new std::complex <float> [5];
     std::complex <float> *sig2 = new std::complex <float> [5];
     sig1[0] = 1;
@@ -308,6 +289,78 @@ int main(int argc, char *argv[])
             bits[i] = 0;
         std::cout << bits[i] << " ";
     }
+}
+
+int main(int argc, char *argv[])
+{
+    //*********** ОТКРЫТИЕ ФАЙЛА ************************************    
+    float data[size_signal];
+    open_read_file(data);
+
+    //**************** СКЛЕИВАНИЕ В КОМПЛЕКСНЫЕ ЧИСЛА ***************
+    std::complex <float> *com = new std::complex  <float> [size_signal/2];
+    complex_sig(data, com);
+
+    /*std::ofstream fout;
+    fout.open("signal.txt");
+    for(int i = 0; i < size_signal/2; i++)
+    {
+        fout << "i = " << i+1 << " : " << com[i] << std::endl;
+    }
+    fout.close();*/
+    //***************** ПРИВЕДЕНИЕ К ДИФФ. ВИДУ *********************
+    std::complex <float> *diff_com = new std::complex  <float> [size_signal/2];
+    diff_complex_sig(com, diff_com);
+
+    /*std::ofstream fout;
+    fout.open("diff_signal.txt");
+    for(int i = 0; i < size_signal/2; i++)
+    {
+        fout << "i = " << i+1 << " : " << diff_com[i] << std::endl;
+    }
+    fout.close();*/
+    //****************** ПОДГОТОВКА ПРЕАМБУЛЫ ***********************
+    std::complex <float> *twiddles = new std::complex <float> [18];
+    twd(twiddles);
+    std::complex <float> synchro[] = {twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[4], twiddles[3], twiddles[2], twiddles[1], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[6], twiddles[7], twiddles[8], twiddles[9], twiddles[10], twiddles[11], twiddles[12], twiddles[13],
+                                 twiddles[14], twiddles[15], twiddles[16], twiddles[17], twiddles[2], twiddles[3], twiddles[4], twiddles[5],
+                                 twiddles[6], twiddles[7], twiddles[8], twiddles[9], twiddles[8], twiddles[7], twiddles[6], twiddles[5]};
+
+
+    //****************** БЫСТРАЯ КОРЕЕЛЯЦИЯ *************************
+    alglib::complex *pIFFT = new alglib::complex[size_signal/2];
+    correlation(synchro, com, pIFFT);
+
+    //*********************** ПОИСК МАКСИМУМА В КАЖДОМ ФРЕЙМЕ *******
+    alglib::complex *max = new alglib::complex[16];
+    int index[32];
+    find_max(pIFFT, max, index);
+
+    //********************** НОРМИРОВАНИЕ ***************************
+    //******************** ПОИСК САМОГО МАКСИМАЛЬНОГО ЭЛЕМЕНТА ******
+    alglib::complex *norm_max_corr = new alglib::complex[16];
+    norm_max(max, index, norm_max_corr);
+
+    //************ ВЫДЕЛЕНИЕ ПАКЕТА *********************************    
+    std::complex <float> *package = new std::complex  <float> [length_data];
+    pars_package(norm_max_corr, index, com, package);
+
+    //********************** ДЕМОДУЛЯТОР ****************************
+    demodulation(package);
+
     QCoreApplication a(argc, argv);
     return a.exec();
 }
