@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <complex>
 #include <math.h>
+#include <cmath>
 #include <algorithm>
 #include "fasttransforms.h"
 
@@ -236,7 +237,7 @@ void pars_package(alglib::complex *norm_max_corr, int index[], std::complex <flo
     }
 }
 
-void demodulation(std::complex <float> *package)
+void demodulation(std::complex <float> *package, int bits[])
 {
     std::complex <float> one(0, 1);
     std::complex <float> *sig1 = new std::complex <float> [5];
@@ -252,7 +253,6 @@ void demodulation(std::complex <float> *package)
         //std::cout << sig2[i] << std::endl;
     }
     std::complex <float> *x = new std::complex <float> [5];
-    int bits[length_data/4];
     int ii = 0;
     for(int i = 2; i < length_data; i = i + 4)
     {
@@ -289,6 +289,48 @@ void demodulation(std::complex <float> *package)
             bits[i] = 0;
         std::cout << bits[i] << " ";
     }
+}
+
+void translation(int coordinate_data[])
+{
+    int id_data[32];
+    int latitude[32];
+    int longitude[32];
+    for(int i = 0; i < 32; i++)
+    {
+        id_data[i] = coordinate_data[i];
+        latitude[i] = coordinate_data[32+i];
+        longitude[i] = coordinate_data[64+i];
+    }
+
+    int ID = 0;
+    int lat = 0;
+    int lon = 0;
+    for(int i = 31; i >= 0; i--)
+    {
+        ID = ID + pow(2,id_data[i]);
+        lat = lat + pow(2,latitude[i]);
+        lon = lon + pow(2,longitude[i]);
+    }
+    std::cout << "ID = " << ID << ", latitude = " << lat << ", longitude = " << lon << std::endl;
+
+    int speed_data[16];
+    int course_data[16];
+    for(int i = 0; i < 16; i++)
+    {
+        speed_data[i] = coordinate_data[96+i];
+        course_data[i] = coordinate_data[112+i];
+    }
+
+    int speed = 0;
+    int course = 0;
+    for(int i = 15; i >= 0; i--)
+    {
+        speed = speed + pow(2,speed_data[i]);
+        course = course + pow(2, course_data[i]);
+    }
+    std::cout << "speed = " << speed << ", course = " << course << std::endl;
+
 }
 
 int main(int argc, char *argv[])
@@ -358,8 +400,19 @@ int main(int argc, char *argv[])
     std::complex <float> *package = new std::complex  <float> [length_data];
     pars_package(norm_max_corr, index, com, package);
 
-    //********************** ДЕМОДУЛЯТОР ****************************
-    demodulation(package);
+    //********************** ДЕМОДУЛЯТОР ****************************    
+    int bits[length_data/4];
+    demodulation(package, bits);
+
+    //******************** ПАРСИНГ **********************************
+    int coordinate_data[168];
+    for(int i = 0; i < 168; i++)
+    {
+        coordinate_data[i] = bits[32+i];
+    }
+
+    //****************** ПЕРЕВОД В 10ую СИСТЕМУ *********************
+    translation(coordinate_data);
 
     QCoreApplication a(argc, argv);
     return a.exec();
