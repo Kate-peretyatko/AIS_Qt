@@ -1,0 +1,17 @@
+INPUT(
+./release\main.o
+./release\ais.o
+./release\alglibinternal.o
+./release\alglibmisc.o
+./release\ap.o
+./release\dataanalysis.o
+./release\diffequations.o
+./release\fasttransforms.o
+./release\integration.o
+./release\interpolation.o
+./release\linalg.o
+./release\optimization.o
+./release\solvers.o
+./release\specialfunctions.o
+./release\statistics.o
+);
