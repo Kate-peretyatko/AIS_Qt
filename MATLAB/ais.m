@@ -1,12 +1,12 @@
 clear;
 clc;
 %***************** ОТКРЫТИЕ ФАЙЛА *****************************************
-fid = fopen('ais138.dat', 'rb');  % открытие файла на чтение
+fid = fopen('ais263.dat', 'rb');  % открытие файла на чтение
 if fid == -1
     error('File is not opened');
 end
 
-%f=fopen('my.txt','wt');
+%f=fopen('ais.dat','wt');
 
 frame=0;             % инициализация переменной
 cnt=1;              % инициализация счетчика
@@ -156,19 +156,19 @@ l_FCR = length(FCR_data);
 %************************ ПОДСЧЁТ CRC *************************************
 summ = bitxor(coordinate_data(153:168), FCR_data);
 
-order = 0;
-polynomial = 0;
-m = l_FCR;
-syms x;
-for t = l_c : -1 : (l_c-l_FCR+1)
-    polynomial = polynomial + (x^order)*summ(m);
-    order = order + 1;
-    m = m - 1;
-end
-for k = (l_c-l_FCR) : -1 : 1
-    polynomial = polynomial + (x^order)*coordinate_data(k);
-    order = order + 1;
-end;
+% order = 0;
+% polynomial = 0;
+% m = l_FCR;
+% syms x;
+% for t = l_c : -1 : (l_c-l_FCR+1)
+%     polynomial = polynomial + (x^order)*summ(m);
+%     order = order + 1;
+%     m = m - 1;
+% end
+% for k = (l_c-l_FCR) : -1 : 1
+%     polynomial = polynomial + (x^order)*coordinate_data(k);
+%     order = order + 1;
+% end;
 
 % order_FCR = 0;
 % poly_FCR = 0;
@@ -178,23 +178,28 @@ end;
 %     order_FCR = order_FCR + 1;
 % end;
 
-CRC = 0;
-order_CRC= 0;
-for h = 16 : -1 : 1
-    CRC = CRC + x^order_CRC;
-    order_CRC = order_CRC + 1;
-end;
+% CRC = 0;
+% order_CRC= 0;
+% for h = 16 : -1 : 1
+%     CRC = CRC + x^order_CRC;
+%     order_CRC = order_CRC + 1;
+% end;
 
 vector_data = [1];
 CRC_data = [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1];
-coordinate_data(153:168) = summ;
-for q = 1 : 168
+for q = 1 : 153
     vector_data(q) = coordinate_data(q);
 end
-
+i = 1;
+for q = 154 : 168
+    vector_data(q) = summ(i);
+    i = i + 1;
+end  
 [q,r] = deconv(vector_data, CRC_data);
-
+r
 %************************** ПЕРЕВОД ИЗ 2ой в 10ую *************************
+coordinate_data = bits(33:200);
+
 %*** ID
 id_data = coordinate_data(1:32);
 ID = 0;
@@ -234,3 +239,18 @@ for u = 16 : -1 : 1
     course = course + 2^(course_data(u));
 end;
 course
+
+of = fopen('C:\\diplom\\test', 'wt');
+if of == -1
+    error('File is not opened');
+end
+fprintf(of, '%i', ID);        % запись в файл
+fprintf(of, ' ');
+fprintf(of, '%i', latitude); 
+fprintf(of, ' ');
+fprintf(of, '%i', longitude); 
+fprintf(of, ' ');
+fprintf(of, '%i', speed); 
+fprintf(of, ' ');
+fprintf(of, '%i', course); 
+fclose(of); 
